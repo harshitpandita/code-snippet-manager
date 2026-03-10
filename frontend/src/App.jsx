@@ -106,7 +106,7 @@ function App() {
       setError(`Failed to delete snippet. ${err.message}`);
     }
   };
-
+     
   const copySnippet = (text) => {
     navigator.clipboard.writeText(text).catch(() => {
       alert("Failed to copy snippet. Please try again.");
@@ -140,7 +140,7 @@ function App() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                 />
-              </label>
+              </label>   
 
               <label className="formLabel">
                 <span>Language</span>
@@ -233,4 +233,5 @@ function App() {
   );
 }
 
+   
 export default App;
