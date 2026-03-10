@@ -10,7 +10,7 @@ pipeline {
 
         // Use docker-compose (via docker image) to guarantee availability in the Jenkins agent.
         // This keeps the project demo showing docker-compose usage even if the host CLI lacks it.
-        sh 'COMPOSE_CMD="docker run --rm -v $PWD:/app -v /var/run/docker.sock:/var/run/docker.sock -w /app docker/compose:2.17.2"'
+        sh 'COMPOSE_CMD="docker run --rm -v $PWD:/app -v /var/run/docker.sock:/var/run/docker.sock -w /app docker/compose:latest"'
 
         // Start only Mongo for tests
         sh '$COMPOSE_CMD up -d mongo'
@@ -30,7 +30,7 @@ pipeline {
 
     stage('Build & Deploy (Docker Compose)') {
       steps {
-        sh 'COMPOSE_CMD="docker run --rm -v $PWD:/app -v /var/run/docker.sock:/var/run/docker.sock -w /app docker/compose:2.17.2"'
+        sh 'COMPOSE_CMD="docker run --rm -v $PWD:/app -v /var/run/docker.sock:/var/run/docker.sock -w /app docker/compose:latest"'
         sh '$COMPOSE_CMD down || true'
         sh '$COMPOSE_CMD up --build -d'
       }
