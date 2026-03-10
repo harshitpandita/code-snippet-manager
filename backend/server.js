@@ -28,12 +28,28 @@ app.get("/health", (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-mongoose.connect(process.env.MONGO_URI || "mongodb://localhost:27017/snippets")
-.then(() => console.log("MongoDB connected"))
-.catch(err => console.log(err));
+const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/snippets";
+
+async function connectToMongo() {
+  try {
+    await mongoose.connect(MONGO_URI);
+    console.log("MongoDB connected");
+  } catch (err) {
+    console.error("MongoDB connection error", err);
+  }
+}
+
+// Only connect to Mongo when running the server directly (not when imported for tests)
+if (require.main === module) {
+  connectToMongo();
+}
 
 app.use("/snippets", snippetRoutes);
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+module.exports = app;
+
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}

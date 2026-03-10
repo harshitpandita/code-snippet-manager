@@ -10,7 +10,9 @@ function App() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  // The frontend (running in the browser) uses the host's localhost for the backend.
+  // This works whether the backend is running locally or in Docker with port 5000 exposed.
+  const BASE_URL = "http://localhost:5000";
 
   useEffect(() => {
     const loadSnippets = async () => {
@@ -18,17 +20,19 @@ function App() {
       setError(null);
 
       try {
-        const res = await fetch(`${BASE_URL}/snippets`);
+        const url = `${BASE_URL}/snippets`;
+        const res = await fetch(url);
+
         if (!res.ok) {
           const message = await res.text();
-          throw new Error(message || res.statusText);
+          throw new Error(`${res.status} ${res.statusText} - ${message}`);
         }
 
         const data = await res.json();
         setSnippets(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Failed to load snippets", err);
-        setError("Unable to load snippets. Is the backend running?");
+        setError(`Unable to load snippets from ${BASE_URL}. ${err.message}`);
         setSnippets([]);
       } finally {
         setLoading(false);
@@ -76,7 +80,7 @@ function App() {
       setSnippets(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error(err);
-      setError("Failed to save snippet. Is the backend running?");
+      setError(`Failed to save snippet. ${err.message}`);
     }
   };
 
@@ -99,7 +103,7 @@ function App() {
       setSnippets(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error(err);
-      setError("Failed to delete snippet. Is the backend running?");
+      setError(`Failed to delete snippet. ${err.message}`);
     }
   };
 

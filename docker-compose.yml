@@ -9,7 +9,9 @@ services:
       - "27017:27017"
 
   backend:
-    image: harshitpandita/snippet-backend:latest
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: snippet-backend
     ports:
       - "5000:5000"
@@ -19,11 +21,13 @@ services:
       - MONGO_URI=mongodb://mongo:27017/snippets
 
   frontend:
-    image: harshitpandita/snippet-frontend:latest
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     container_name: snippet-frontend
     ports:
       - "5173:5173"
     depends_on:
       - backend
     environment:
-      - VITE_API_URL=http://backend:5000
+      - VITE_API_URL=http://localhost:5000
