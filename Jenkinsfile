@@ -4,9 +4,16 @@ pipeline {
   stages {
     stage('Install & Test') {
       steps {
-        // Bring up Mongo (used by tests) via docker-compose so we don't rely on mongodb-memory-server binaries
-        sh 'docker-compose up -d mongo'
-        // Wait briefly for Mongo to become available
+        // Sanity-check Docker access (required for docker-compose-in-container)
+        sh 'docker version'
+        sh 'docker run --rm -v /var/run/docker.sock:/var/run/docker.sock docker/compose:2.17.2 version'
+
+        // Use docker-compose (via docker image) to guarantee availability in the Jenkins agent.
+        // This keeps the project demo showing docker-compose usage even if the host CLI lacks it.
+        sh 'COMPOSE_CMD="docker run --rm -v $PWD:/app -v /var/run/docker.sock:/var/run/docker.sock -w /app docker/compose:2.17.2"'
+
+        // Start only Mongo for tests
+        sh '$COMPOSE_CMD up -d mongo'
         sh 'sleep 5'
 
         dir('backend') {
@@ -17,14 +24,15 @@ pipeline {
         }
 
         // Stop services started for the tests
-        sh 'docker-compose down'
+        sh '$COMPOSE_CMD down'
       }
     }
 
     stage('Build & Deploy (Docker Compose)') {
       steps {
-        sh 'docker-compose down || true'
-        sh 'docker-compose up --build -d'
+        sh 'COMPOSE_CMD="docker run --rm -v $PWD:/app -v /var/run/docker.sock:/var/run/docker.sock -w /app docker/compose:2.17.2"'
+        sh '$COMPOSE_CMD down || true'
+        sh '$COMPOSE_CMD up --build -d'
       }
     }
   }
