@@ -6,9 +6,15 @@ const app = require("../server");
 let mongoServer;
 
 beforeAll(async () => {
-  mongoServer = await MongoMemoryServer.create();
-  const uri = mongoServer.getUri();
-  await mongoose.connect(uri);
+  const mongoUri = process.env.MONGO_URI;
+  if (mongoUri) {
+    // Use a real MongoDB (e.g., from docker-compose) when provided.
+    await mongoose.connect(mongoUri);
+  } else {
+    mongoServer = await MongoMemoryServer.create();
+    const uri = mongoServer.getUri();
+    await mongoose.connect(uri);
+  }
 });
 
 afterAll(async () => {

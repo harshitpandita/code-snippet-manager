@@ -4,10 +4,20 @@ pipeline {
   stages {
     stage('Install & Test') {
       steps {
+        // Bring up Mongo (used by tests) via docker-compose so we don't rely on mongodb-memory-server binaries
+        sh 'docker compose up -d mongo'
+        // Wait briefly for Mongo to become available
+        sh 'sleep 5'
+
         dir('backend') {
           sh 'npm ci'
-          sh 'npm test'
+          withEnv(['MONGO_URI=mongodb://localhost:27017/snippets']) {
+            sh 'npm test'
+          }
         }
+
+        // Stop services started for the tests
+        sh 'docker compose down'
       }
     }
 
