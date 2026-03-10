@@ -6,7 +6,7 @@ pipeline {
       steps {
         // Sanity-check Docker access (required for docker-compose-in-container)
         sh 'docker version'
-        sh 'docker run --rm -v /var/run/docker.sock:/var/run/docker.sock docker/compose:2.17.2 version'
+        sh 'docker run --rm -v /var/run/docker.sock:/var/run/docker.sock docker/compose:latest version'
 
         // Use docker-compose (via docker image) to guarantee availability in the Jenkins agent.
         // This keeps the project demo showing docker-compose usage even if the host CLI lacks it.
