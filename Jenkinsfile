@@ -2,53 +2,47 @@ pipeline {
   agent any
 
   stages {
-
-    stage('Verify Environment') {
+    stage('Debug Workspace') {
       steps {
         sh '''
-        docker version
-        docker compose version
-        pwd
-        ls -la
+          pwd
+          ls -la
+          test -f docker-compose.yml
         '''
       }
     }
 
     stage('Install & Test') {
       steps {
+        sh 'docker version'
+        sh 'docker compose version'
+
         sh '''
-        set -e
-
-        docker compose up -d mongo
-        sleep 5
-
-        cd backend
-        npm ci
-        MONGO_URI=mongodb://localhost:27017/snippets npm test
-
-        cd ..
-        docker compose down
+          set -e
+          cd backend
+          npm ci
+          npm test
         '''
       }
     }
 
-    stage('Build & Deploy') {
+    stage('Build & Deploy (Docker Compose)') {
       steps {
         sh '''
-        set -e
-        docker compose up --build -d
+          set -e
+          docker compose down --remove-orphans || true
+          docker compose up --build -d
         '''
       }
     }
-
   }
 
   post {
     always {
-      sh 'docker compose down || true'
+      sh 'docker compose down --remove-orphans || true'
     }
     failure {
-      echo 'Build failed. Check logs.'
+      echo 'Build failed. Check the console output for errors.'
     }
   }
 }
