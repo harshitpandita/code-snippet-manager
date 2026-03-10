@@ -23,16 +23,20 @@ jobs:
 
     - name: Build Backend Image
       run: |
-        docker build -t ${{ secrets.DOCKER_USERNAME }}/snippet-backend:latest ./backend
+        docker build -t ${{ secrets.DOCKER_USERNAME }}/snippet-backend:${{ github.sha }} ./backend
+        docker tag ${{ secrets.DOCKER_USERNAME }}/snippet-backend:${{ github.sha }} ${{ secrets.DOCKER_USERNAME }}/snippet-backend:latest
 
     - name: Build Frontend Image
       run: |
-        docker build -t ${{ secrets.DOCKER_USERNAME }}/snippet-frontend:latest ./frontend
+        docker build -t ${{ secrets.DOCKER_USERNAME }}/snippet-frontend:${{ github.sha }} ./frontend
+        docker tag ${{ secrets.DOCKER_USERNAME }}/snippet-frontend:${{ github.sha }} ${{ secrets.DOCKER_USERNAME }}/snippet-frontend:latest
 
     - name: Push Backend Image
       run: |
+        docker push ${{ secrets.DOCKER_USERNAME }}/snippet-backend:${{ github.sha }}
         docker push ${{ secrets.DOCKER_USERNAME }}/snippet-backend:latest
 
     - name: Push Frontend Image
       run: |
+        docker push ${{ secrets.DOCKER_USERNAME }}/snippet-frontend:${{ github.sha }}
         docker push ${{ secrets.DOCKER_USERNAME }}/snippet-frontend:latest
