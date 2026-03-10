@@ -38,6 +38,10 @@ pipeline {
       steps {
         sh '''
           set -e
+
+          docker stop snippet-backend snippet-frontend snippet-mongo 2>/dev/null || true
+          docker rm -f snippet-backend snippet-frontend snippet-mongo 2>/dev/null || true
+
           docker compose down --remove-orphans || true
           docker compose up --build -d
         '''
@@ -46,9 +50,6 @@ pipeline {
   }
 
   post {
-    always {
-      sh 'docker compose down --remove-orphans || true'
-    }
     failure {
       echo 'Build failed. Check the console output for errors.'
     }
