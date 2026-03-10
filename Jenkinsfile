@@ -2,64 +2,53 @@ pipeline {
   agent any
 
   stages {
+
+    stage('Verify Environment') {
+      steps {
+        sh '''
+        docker version
+        docker compose version
+        pwd
+        ls -la
+        '''
+      }
+    }
+
     stage('Install & Test') {
       steps {
-        // Sanity-check Docker access (required for docker-compose-in-container)
-        sh 'docker version'
-
-        // Choose a compose runner: prefer docker-compose/docker compose on host, else use docker/compose container.
         sh '''
-          set -e
+        set -e
 
-          if command -v docker-compose >/dev/null 2>&1; then
-            COMPOSE_CMD="docker-compose"
-          elif docker compose version >/dev/null 2>&1; then
-            COMPOSE_CMD="docker compose"
-          else
-            COMPOSE_CMD="docker run --rm -v $PWD:/app -v /var/run/docker.sock:/var/run/docker.sock -w /app docker/compose:latest"
-          fi
+        docker compose up -d mongo
+        sleep 5
 
-          echo "Using compose runner: $COMPOSE_CMD"
+        cd backend
+        npm ci
+        MONGO_URI=mongodb://localhost:27017/snippets npm test
 
-          # Start only Mongo for tests
-          $COMPOSE_CMD up -d mongo
-          sleep 5
-
-          cd backend
-          npm ci
-          MONGO_URI=mongodb://localhost:27017/snippets npm test
-
-          # Stop services started for the tests
-          $COMPOSE_CMD down
+        cd ..
+        docker compose down
         '''
       }
     }
 
-    stage('Build & Deploy (Docker Compose)') {
+    stage('Build & Deploy') {
       steps {
         sh '''
-          set -e
-
-          if command -v docker-compose >/dev/null 2>&1; then
-            COMPOSE_CMD="docker-compose"
-          elif docker compose version >/dev/null 2>&1; then
-            COMPOSE_CMD="docker compose"
-          else
-            COMPOSE_CMD="docker run --rm -v $PWD:/app -v /var/run/docker.sock:/var/run/docker.sock -w /app docker/compose:latest"
-          fi
-
-          echo "Using compose runner: $COMPOSE_CMD"
-
-          $COMPOSE_CMD down || true
-          $COMPOSE_CMD up --build -d
+        set -e
+        docker compose up --build -d
         '''
       }
     }
+
   }
 
   post {
+    always {
+      sh 'docker compose down || true'
+    }
     failure {
-      echo 'Build failed. Check the console output for errors.'
+      echo 'Build failed. Check logs.'
     }
   }
 }
