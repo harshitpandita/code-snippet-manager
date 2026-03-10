@@ -4,7 +4,6 @@ services:
 
   mongo:
     image: mongo
-    container_name: snippet-mongo
     ports:
       - "27017:27017"
 
@@ -12,7 +11,6 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: snippet-backend
     ports:
       - "5000:5000"
     depends_on:
@@ -24,7 +22,6 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: snippet-frontend
     ports:
       - "5173:5173"
     depends_on:
