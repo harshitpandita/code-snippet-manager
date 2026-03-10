@@ -10,13 +10,15 @@ function App() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
   useEffect(() => {
     const loadSnippets = async () => {
       setLoading(true);
       setError(null);
 
       try {
-        const res = await fetch("http://localhost:5000/snippets");
+        const res = await fetch(`${BASE_URL}/snippets`);
         if (!res.ok) {
           const message = await res.text();
           throw new Error(message || res.statusText);
@@ -47,7 +49,7 @@ function App() {
     setError(null);
 
     try {
-      const res = await fetch("http://localhost:5000/snippets", {
+      const res = await fetch(`${BASE_URL}/snippets`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -69,7 +71,7 @@ function App() {
       setLanguage("");
       setCode("");
 
-      const updated = await fetch("http://localhost:5000/snippets");
+      const updated = await fetch(`${BASE_URL}/snippets`);
       const data = await updated.json();
       setSnippets(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -83,7 +85,7 @@ function App() {
     if (!confirmDelete) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/snippets/${id}`, {
+      const res = await fetch(`${BASE_URL}/snippets/${id}`, {
         method: "DELETE",
       });
 
@@ -92,7 +94,7 @@ function App() {
         throw new Error(message || res.statusText);
       }
 
-      const updated = await fetch("http://localhost:5000/snippets");
+      const updated = await fetch(`${BASE_URL}/snippets`);
       const data = await updated.json();
       setSnippets(Array.isArray(data) ? data : []);
     } catch (err) {
