@@ -5,7 +5,7 @@ pipeline {
     stage('Install & Test') {
       steps {
         // Bring up Mongo (used by tests) via docker-compose so we don't rely on mongodb-memory-server binaries
-        sh 'docker compose up -d mongo'
+        sh 'docker-compose up -d mongo'
         // Wait briefly for Mongo to become available
         sh 'sleep 5'
 
@@ -17,14 +17,14 @@ pipeline {
         }
 
         // Stop services started for the tests
-        sh 'docker compose down'
+        sh 'docker-compose down'
       }
     }
 
     stage('Build & Deploy (Docker Compose)') {
       steps {
-        sh 'docker compose down || true'
-        sh 'docker compose up --build -d'
+        sh 'docker-compose down || true'
+        sh 'docker-compose up --build -d'
       }
     }
   }
