@@ -19,9 +19,17 @@ pipeline {
 
         sh '''
           set -e
+
+          docker compose down --remove-orphans || true
+          docker compose up -d mongo
+          sleep 10
+
           cd backend
           npm ci
-          npm test
+          MONGO_URI=mongodb://host.docker.internal:27017/snippets npm test
+
+          cd ..
+          docker compose down --remove-orphans
         '''
       }
     }

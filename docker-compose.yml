@@ -1,9 +1,10 @@
 services:
-
   mongo:
     image: mongo
     ports:
       - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
 
   backend:
     build:
@@ -26,3 +27,6 @@ services:
       - backend
     environment:
       - VITE_API_URL=http://localhost:5000
+
+volumes:
+  mongo-data:
