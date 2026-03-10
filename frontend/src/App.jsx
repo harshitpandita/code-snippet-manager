@@ -7,11 +7,30 @@ function App() {
   const [language, setLanguage] = useState("");
   const [code, setCode] = useState("");
 
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     const loadSnippets = async () => {
-      const res = await fetch("http://localhost:5000/snippets");
-      const data = await res.json();
-      setSnippets(data);
+      setLoading(true);
+      setError(null);
+
+      try {
+        const res = await fetch("http://localhost:5000/snippets");
+        if (!res.ok) {
+          const message = await res.text();
+          throw new Error(message || res.statusText);
+        }
+
+        const data = await res.json();
+        setSnippets(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Failed to load snippets", err);
+        setError("Unable to load snippets. Is the backend running?");
+        setSnippets([]);
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadSnippets();
@@ -25,39 +44,61 @@ function App() {
       return;
     }
 
-    await fetch("http://localhost:5000/snippets", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        title,
-        language,
-        code,
-        tags: [],
-      }),
-    });
+    setError(null);
 
-    setTitle("");
-    setLanguage("");
-    setCode("");
+    try {
+      const res = await fetch("http://localhost:5000/snippets", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title,
+          language,
+          code,
+          tags: [],
+        }),
+      });
 
-    const res = await fetch("http://localhost:5000/snippets");
-    const data = await res.json();
-    setSnippets(data);
+      if (!res.ok) {
+        const message = await res.text();
+        throw new Error(message || res.statusText);
+      }
+
+      setTitle("");
+      setLanguage("");
+      setCode("");
+
+      const updated = await fetch("http://localhost:5000/snippets");
+      const data = await updated.json();
+      setSnippets(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to save snippet. Is the backend running?");
+    }
   };
 
   const deleteSnippet = async (id) => {
     const confirmDelete = window.confirm("Are you sure you want to delete this snippet?");
     if (!confirmDelete) return;
 
-    await fetch(`http://localhost:5000/snippets/${id}`, {
-      method: "DELETE",
-    });
+    try {
+      const res = await fetch(`http://localhost:5000/snippets/${id}`, {
+        method: "DELETE",
+      });
 
-    const res = await fetch("http://localhost:5000/snippets");
-    const data = await res.json();
-    setSnippets(data);
+      if (!res.ok) {
+        const message = await res.text();
+        throw new Error(message || res.statusText);
+      }
+
+      const updated = await fetch("http://localhost:5000/snippets");
+      const data = await updated.json();
+      setSnippets(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to delete snippet. Is the backend running?");
+    }
   };
 
   const copySnippet = (text) => {
@@ -76,6 +117,9 @@ function App() {
       </header>
 
       <main className="main">
+        {loading && <div className="statusBanner">Loading snippets…</div>}
+        {error && <div className="statusBanner error">{error}</div>}
+
         <section className="panel">
           <div className="panelHeader">
             <h2 className="panelTitle">Add a snippet</h2>
