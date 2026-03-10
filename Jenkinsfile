@@ -6,33 +6,53 @@ pipeline {
       steps {
         // Sanity-check Docker access (required for docker-compose-in-container)
         sh 'docker version'
-        sh 'docker run --rm -v /var/run/docker.sock:/var/run/docker.sock docker/compose:latest version'
 
-        // Use docker-compose (via docker image) to guarantee availability in the Jenkins agent.
-        // This keeps the project demo showing docker-compose usage even if the host CLI lacks it.
-        sh 'COMPOSE_CMD="docker run --rm -v $PWD:/app -v /var/run/docker.sock:/var/run/docker.sock -w /app docker/compose:latest"'
+        // Choose a compose runner: prefer docker-compose/docker compose on host, else use docker/compose container.
+        sh '''
+          set -e
 
-        // Start only Mongo for tests
-        sh '$COMPOSE_CMD up -d mongo'
-        sh 'sleep 5'
+          if command -v docker-compose >/dev/null 2>&1; then
+            COMPOSE_CMD="docker-compose"
+          elif docker compose version >/dev/null 2>&1; then
+            COMPOSE_CMD="docker compose"
+          else
+            COMPOSE_CMD="docker run --rm -v $PWD:/app -v /var/run/docker.sock:/var/run/docker.sock -w /app docker/compose:latest"
+          fi
 
-        dir('backend') {
-          sh 'npm ci'
-          withEnv(['MONGO_URI=mongodb://localhost:27017/snippets']) {
-            sh 'npm test'
-          }
-        }
+          echo "Using compose runner: $COMPOSE_CMD"
 
-        // Stop services started for the tests
-        sh '$COMPOSE_CMD down'
+          # Start only Mongo for tests
+          $COMPOSE_CMD up -d mongo
+          sleep 5
+
+          cd backend
+          npm ci
+          MONGO_URI=mongodb://localhost:27017/snippets npm test
+
+          # Stop services started for the tests
+          $COMPOSE_CMD down
+        '''
       }
     }
 
     stage('Build & Deploy (Docker Compose)') {
       steps {
-        sh 'COMPOSE_CMD="docker run --rm -v $PWD:/app -v /var/run/docker.sock:/var/run/docker.sock -w /app docker/compose:latest"'
-        sh '$COMPOSE_CMD down || true'
-        sh '$COMPOSE_CMD up --build -d'
+        sh '''
+          set -e
+
+          if command -v docker-compose >/dev/null 2>&1; then
+            COMPOSE_CMD="docker-compose"
+          elif docker compose version >/dev/null 2>&1; then
+            COMPOSE_CMD="docker compose"
+          else
+            COMPOSE_CMD="docker run --rm -v $PWD:/app -v /var/run/docker.sock:/var/run/docker.sock -w /app docker/compose:latest"
+          fi
+
+          echo "Using compose runner: $COMPOSE_CMD"
+
+          $COMPOSE_CMD down || true
+          $COMPOSE_CMD up --build -d
+        '''
       }
     }
   }
